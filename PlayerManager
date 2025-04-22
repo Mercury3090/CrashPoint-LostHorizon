@@ -1,0 +1,141 @@
+using UnityEngine;
+
+public class PlayerManager : MonoBehaviour
+{
+    [Header("Core Stats")]
+    public float maxHealth = 100f;
+    public float maxHunger = 100f;
+    public float maxHydration = 100f;
+    public float maxSleep = 100f;
+    public float maxInsanity = 200f;
+
+    public float health;
+    public float hunger;
+    public float hydration;
+    public float sleep;
+    public float insanity;
+
+    [Header("Drain Rates (per second)")]
+    public float hungerDrainRate = 1f;
+    public float hydrationDrainRate = 1.5f;
+    public float sleepDrainRate = 0.5f;
+    public float insanityGainRate = 0.1f;
+
+    [Header("Insanity Increases")]
+    public float insanityFromHunger = 0.3f;
+    public float insanityFromThirst = 0.2f;
+    public float insanityFromSleep = 0.1f;
+    public float insanityFromDamage = 5f;
+    public float insanityFromDeath = 10f;
+
+    [Header("Damage When Depleted")]
+    public float healthDamageWhenHungry = 5f;
+    public float healthDamageWhenThirsty = 7f;
+    public float healthDamageWhenSleepDeprived = 2f;
+
+    [Header("Lives")]
+    public int lives = 5;
+
+    [Header("Respawn")]
+    public Vector2 respawnPosition;
+
+    void Start()
+    {
+        health = maxHealth;
+        hunger = maxHunger;
+        hydration = maxHydration;
+        sleep = maxSleep;
+        insanity = 0f;
+
+        respawnPosition = transform.position;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        //Drain stats over time
+        hunger -= hungerDrainRate * Time.deltaTime;
+        hydration -= hydrationDrainRate * Time.deltaTime;
+        sleep -= sleepDrainRate * Time.deltaTime;
+
+        //Clamp Stats
+        hunger = Mathf.Clamp(hunger, 0, maxHunger);
+        hydration = Mathf.Clamp(hydration, 0, maxHydration);
+        sleep = Mathf.Clamp(sleep, 0, maxSleep);
+        insanity = Mathf.Clamp(insanity, 0, maxInsanity);
+
+        //Increase Insanity if stats are low
+        if (hunger <= 25f)
+        {
+            insanity += insanityFromHunger * Time.deltaTime;
+        }
+        if (hydration <= 25f)
+        {
+            insanity += insanityFromThirst * Time.deltaTime;
+        }
+        if (sleep <= 25f)
+        {
+            insanity += insanityFromSleep * Time.deltaTime;
+        }
+
+        //Decrease health if stats reach 0
+        if (hunger <= 0)
+        {
+            health -= healthDamageWhenHungry * Time.deltaTime;
+        }
+        if (hydration <= 0)
+        {
+            health -= healthDamageWhenThirsty * Time.deltaTime;
+        }
+        if (sleep <= 0)
+        {
+            health -= healthDamageWhenSleepDeprived * Time.deltaTime;
+        }
+
+        health = Mathf.Clamp(health, 0, maxHealth);
+
+        //Check death 
+        if (health <= 0)
+        {
+            LoseLife();
+        }
+
+        //Debug.Log($"Health: {health} | Hunger: {hunger} | Hydration: {hydration} | Sleep: {sleep} | Insanity: {insanity} | Lives: {lives}");
+
+    }
+
+    void LoseLife()
+    {
+        lives--;
+
+        if (lives <= 0)
+        {
+            Debug.Log("GAME OVER");
+        }
+        else
+        {
+            Debug.Log("Player died. Respawning...");
+            Respawn();
+            health = maxHealth;
+            hunger = maxHunger;
+            hydration = maxHydration;
+            sleep = maxSleep;
+            insanity += insanityFromDeath;
+
+            // Add proper respawn later
+        }
+    }
+
+    public void TakeDamage(float damage)
+    {
+        health -= damage;
+        insanity += insanityFromDamage;
+    }
+
+    void Respawn()
+    {
+        transform.position = respawnPosition;
+        health = maxHealth;
+        Debug.Log("Player respawned.");
+    }
+}
