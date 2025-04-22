@@ -1,0 +1,49 @@
+using UnityEngine;
+
+public class EnemySquare : MonoBehaviour
+{
+    public float detectionRadius = 5f;
+    public float moveSpeed = 2f;
+    public float damage = 10f;
+    public float attackCooldown = 1f;
+
+    private Transform player;
+    private float nextAttackTime = 0f;
+
+    void Start()
+    {
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+
+        if (playerObj != null)
+        {
+            player = playerObj.transform;
+        }
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (player == null) return;
+
+        float distance = Vector2.Distance(transform.position, player.position);
+
+        if (distance < detectionRadius)
+        {
+            Vector2 direction = (player.position - transform.position).normalized;
+            transform.position += (Vector3)(direction * moveSpeed * Time.deltaTime);
+        }
+    }
+
+    void OnCollisionStay2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player") && Time.time >= nextAttackTime)
+        {
+            PlayerManager stats = collision.gameObject.GetComponent<PlayerManager>();
+            if (stats != null)
+            {
+                stats.TakeDamage(damage);
+                nextAttackTime = Time.time + attackCooldown;
+            }
+        }
+    }
+}
